@@ -1,0 +1,62 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          scpro
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Screen Pro Service
+# Description:       Screen Pro Service Description
+### END INIT INFO
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+NAME=scpro
+DESC="Screen Pro Service"
+PIDFILE="/var/run/$NAME.pid"
+SCRIPT="/usr/bin/screen"
+RUNAS="root"
+SCREEN_NAME="pro"
+
+# Start the service
+start() {
+    if [ -f "$PIDFILE" ] && kill -0 $(cat "$PIDFILE"); then
+        echo "$DESC is already running."
+        return 1
+    fi
+    echo "Starting $DESC..."
+    su -c "$SCRIPT -dmS $SCREEN_NAME" $RUNAS
+    echo $! > "$PIDFILE"
+    echo "$DESC started."
+}
+
+# Stop the service
+stop() {
+    if [ ! -f "$PIDFILE" ] || ! kill -0 $(cat "$PIDFILE"); then
+        echo "$DESC is not running."
+        return 1
+    fi
+    echo "Stopping $DESC..."
+    su -c "$SCRIPT -XS $SCREEN_NAME quit" $RUNAS
+    rm "$PIDFILE"
+    echo "$DESC stopped."
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        sleep 1
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0
